@@ -29,7 +29,8 @@ import {
   Briefcase,
   GraduationCap,
   Calendar,
-  Award
+  Award,
+  Plus
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -140,7 +141,13 @@ const Navbar = () => {
   );
 };
 
-const Hero = () => {
+const Hero = ({ profileImg, onImageClick, fileInputRef, onFileChange, isAdmin }: { 
+   profileImg: string, 
+   onImageClick: () => void, 
+   fileInputRef: React.RefObject<HTMLInputElement>,
+   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
+   isAdmin: boolean
+ }) => {
   const words = ["Full-Stack", "Creative", "Modern", "Futuristic"];
   const [wordIdx, setWordIdx] = useState(0);
 
@@ -168,6 +175,57 @@ const Hero = () => {
           transition={{ duration: 0.8 }}
           className="lg:col-span-7"
         >
+          {/* Hero Profile Image */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.5, rotate: -20 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className={cn(
+              "relative w-48 h-48 mb-8 group mx-auto lg:mx-0",
+              isAdmin && "cursor-pointer"
+            )}
+            onClick={isAdmin ? onImageClick : undefined}
+            title={isAdmin ? "Click to change profile image" : ""}
+          >
+            {isAdmin && (
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept="image/*" 
+                onChange={onFileChange} 
+              />
+            )}
+            <div className="absolute -inset-2 bg-gradient-to-r from-brand-primary to-brand-secondary rounded-full blur-xl opacity-40 group-hover:opacity-60 transition-opacity animate-pulse" />
+            <div className="relative w-full h-full rounded-full overflow-hidden border-2 border-white/10 glass p-1">
+              <img 
+                src={profileImg} 
+                alt="Mitiku Etafa" 
+                className="w-full h-full object-cover rounded-full grayscale hover:grayscale-0 transition-all duration-500"
+                referrerPolicy="no-referrer"
+              />
+              {/* Upload overlay on hover */}
+              {isAdmin && (
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] uppercase font-bold tracking-widest">
+                  <Layers className="w-5 h-5 mb-1" />
+                  Update Photo
+                </div>
+              )}
+            </div>
+            {/* Decorative orbit ring */}
+            <motion.div 
+              animate={{ rotate: 360 }}
+              transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+              className="absolute -inset-4 border border-brand-primary/20 rounded-full border-dashed pointer-events-none"
+            />
+            {/* Plus Icon Button */}
+            {isAdmin && (
+              <div className="absolute bottom-2 right-2 w-10 h-10 bg-brand-primary rounded-full flex items-center justify-center border-2 border-dark-bg shadow-xl group-hover:scale-110 transition-transform">
+                <Plus className="w-5 h-5 text-white" />
+              </div>
+            )}
+          </motion.div>
+
           <h2 className="section-tag">// Hello, my name is</h2>
           <motion.h1 
             animate={{ 
@@ -295,7 +353,7 @@ const SectionHeader = ({ title, subtitle, className, count }: { title: string, s
   </div>
 );
 
-const About = () => {
+const About = ({ profileImg }: { profileImg: string }) => {
   return (
     <section id="about" className="py-24 px-6 relative overflow-hidden">
       <div className="max-w-screen-2xl mx-auto grid lg:grid-cols-2 gap-8 items-center">
@@ -308,7 +366,7 @@ const About = () => {
           <div className="absolute -inset-4 bg-gradient-to-r from-brand-primary to-brand-secondary rounded-2xl blur-2xl opacity-20 group-hover:opacity-30 transition-all" />
           <div className="aspect-square rounded-2xl overflow-hidden glass relative">
             <img 
-              src="https://images.stockcake.com/public/0/5/9/059abcd3-426e-4d69-9cdf-c0d353c63189_large/coder-at-work-stockcake.jpg" 
+              src={profileImg} 
               alt="Profile" 
               className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700"
               referrerPolicy="no-referrer"
@@ -768,6 +826,27 @@ export default function App() {
     restDelta: 0.001
   });
 
+  const [profileImg, setProfileImg] = useState("https://images.stockcake.com/public/0/5/9/059abcd3-426e-4d69-9cdf-c0d353c63189_large/coder-at-work-stockcake.jpg");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setIsAdmin(params.get('admin') === 'true');
+  }, []);
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setProfileImg(url);
+    }
+  };
+
   return (
     <div className="relative bg-dark-bg min-h-screen selection:bg-brand-primary selection:text-white">
       {/* Texture & Overlays */}
@@ -783,14 +862,20 @@ export default function App() {
       <Navbar />
       
       <main className="relative z-10">
-        <Hero />
+        <Hero 
+          profileImg={profileImg} 
+          onImageClick={handleImageClick} 
+          fileInputRef={fileInputRef} 
+          onFileChange={handleFileChange} 
+          isAdmin={isAdmin}
+        />
         
         {/* Decorative Divider */}
         <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent flex items-center justify-center">
           <div className="w-2 h-2 bg-brand-primary rotate-45 mb-[1px]" />
         </div>
 
-        <About />
+        <About profileImg={profileImg} />
         <Experience />
         <Services />
         <Skills />
